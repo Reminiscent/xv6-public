@@ -77,6 +77,21 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT:
+  {
+      char *mem = kalloc();
+      // do kalloc in if condition, if check failed(kalloc failed), just
+      // keep executing the following default branch
+      if (mem != 0) {
+          uint va = PGROUNDDOWN(rcr2());
+          memset(mem, 0, PGSIZE);
+          extern int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+          if(mappages(myproc()->pgdir,(void *)va, PGSIZE, V2P(mem), PTE_W|PTE_U) >= 0) {
+              break;
+          }
+      }
+  }
+
 
   //PAGEBREAK: 13
   default:
