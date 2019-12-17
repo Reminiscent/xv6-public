@@ -55,6 +55,21 @@ trap(struct trapframe *tf)
       release(&tickslock);
     }
     lapiceoi();
+    if (myproc() != 0 && (tf->cs & 3) == 3)
+    {
+        // Increment the tick counter in struct proc
+        myproc()->tick_counts++;
+        // Do something if the count touches the limit
+        if (myproc()->tick_counts == myproc()->alarmticks) {
+            // Here, we are in privilege level, can not execute the command directly
+            // modify the trapframe, make the user program run the "handler" program after return.
+            // In order to resume previous eip, we need to push the eip to stack first
+            tf->esp -= 4;
+            *((uint *)(tf->esp)) = tf->eip;
+            tf->eip = (uint)myproc()->alarmhandler;
+            myproc()->tick_counts = 0;
+        }
+    }
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();
