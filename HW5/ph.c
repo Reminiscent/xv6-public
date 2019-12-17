@@ -12,6 +12,7 @@
 #define SOL
 #define NBUCKET 5
 #define NKEYS 100000
+pthread_mutex_t lock[NBUCKET];
 
 struct entry {
     int key;
@@ -60,7 +61,9 @@ static
 void put(int key, int value)
 {
     int i = key % NBUCKET;
+    pthread_mutex_lock(&lock[i]);
     insert(key, value, &table[i], table[i]);
+    pthread_mutex_unlock(&lock[i]);
 }
 
 static struct entry*
